@@ -27,7 +27,7 @@ public class HolidayService {
     public Map<LocalDate, List<Holiday>> loadHolidays() {
         Map<LocalDate, List<Holiday>> holidays = new HashMap<>();
         int currentYear = LocalDate.now().getYear();
-        for (int year = currentYear; year <= currentYear + 1; year++) {
+        for (int year = currentYear - 1; year <= currentYear + 1; year++) {
             try {
                 String url = "https://date.nager.at/api/v3/PublicHolidays/" + year + "/US";
                 HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();

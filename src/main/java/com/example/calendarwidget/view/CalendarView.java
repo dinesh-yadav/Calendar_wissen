@@ -84,6 +84,16 @@ public class CalendarView extends JPanel {
                                 button.setBackground(null);
                                 button.setOpaque(false);
                             }
+                            List<Holiday> dayHolidays = holidays.get(date);
+                            if (dayHolidays != null && !dayHolidays.isEmpty()) {
+                                StringBuilder tooltip = new StringBuilder();
+                                for (Holiday h : dayHolidays) {
+                                    tooltip.append(h.getType().equals("work") ? "Work Holiday: " : "Holiday: ").append(h.getName()).append("\n");
+                                }
+                                button.setToolTipText(tooltip.toString().trim());
+                            } else {
+                                button.setToolTipText(null);
+                            }
                         }
                     } catch (NumberFormatException e) {
                         // ignore
