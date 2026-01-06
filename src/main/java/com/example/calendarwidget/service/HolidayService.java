@@ -33,11 +33,14 @@ public class HolidayService {
                 HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
                 List<Holiday> holidayList = gson.fromJson(response.body(), new TypeToken<List<Holiday>>(){}.getType());
+                System.out.println("Fetched " + holidayList.size() + " holidays for year " + year + ":");
                 for (Holiday h : holidayList) {
                     h.setType("regular");
+                    System.out.println("  Holiday: " + h.getName() + " on " + h.getDate());
                     // Example: mark some as work holidays
                     if (h.getName().contains("Christmas") || h.getName().contains("Thanksgiving")) {
                         h.setType("work");
+                        System.out.println("    Marked as work holiday");
                     }
                     LocalDate date = LocalDate.parse(h.getDate());
                     holidays.computeIfAbsent(date, k -> new ArrayList<>()).add(h);
@@ -46,6 +49,7 @@ public class HolidayService {
                 e.printStackTrace();
             }
         }
+        System.out.println("Total holiday dates loaded: " + holidays.size());
         return holidays;
     }
 }
