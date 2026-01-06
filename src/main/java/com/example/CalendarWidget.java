@@ -14,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,12 +26,13 @@ public class CalendarWidget {
     private static JCalendar currCal;
     private static JCalendar nextCal;
     private static LocalDate currentMonth;
-    private static Map<LocalDate, String> holidays = new HashMap<>();
+    private static Map<LocalDate, List<Holiday>> holidays = new HashMap<>();
     private static Map<LocalDate, String> vacations = new HashMap<>();
 
     static class Holiday {
         String date;
         String name;
+        String type; // "regular" or "work"
     }
 
     public static void main(String[] args) {
@@ -120,7 +122,8 @@ public class CalendarWidget {
 
         addCalendarListeners();
 
-        calendarFrame.setVisible(false);
+        // calendarFrame.setVisible(false);
+        showCalendar();
     }
 
     private static void updateCalendars() {
@@ -135,17 +138,26 @@ public class CalendarWidget {
             public void actionPerformed(ActionEvent e) {
                 JCalendar cal = (JCalendar) e.getSource();
                 LocalDate selectedDate = LocalDate.ofInstant(cal.getDate().toInstant(), ZoneId.systemDefault());
-                String info = "";
-                if (holidays.containsKey(selectedDate)) {
-                    info += "Holiday: " + holidays.get(selectedDate) + "\n";
+                StringBuilder info = new StringBuilder();
+                List<Holiday> dayHolidays = holidays.get(selectedDate);
+                if (dayHolidays != null) {
+                    // Sort to prioritize work holidays
+                    dayHolidays.sort((a, b) -> {
+                        if ("work".equals(a.type) && !"work".equals(b.type)) return -1;
+                        if (!"work".equals(a.type) && "work".equals(b.type)) return 1;
+                        return 0;
+                    });
+                    for (Holiday h : dayHolidays) {
+                        info.append(h.type.equals("work") ? "Work Holiday: " : "Holiday: ").append(h.name).append("\n");
+                    }
                 }
                 if (vacations.containsKey(selectedDate)) {
-                    info += "Vacation: " + vacations.get(selectedDate) + "\n";
+                    info.append("Vacation: ").append(vacations.get(selectedDate)).append("\n");
                 }
-                if (info.isEmpty()) {
-                    info = "No special events";
+                if (info.length() == 0) {
+                    info.append("No special events");
                 }
-                JOptionPane.showMessageDialog(calendarFrame, info);
+                JOptionPane.showMessageDialog(calendarFrame, info.toString().trim());
             }
         };
 
@@ -165,8 +177,13 @@ public class CalendarWidget {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                 List<Holiday> holidayList = gson.fromJson(response.body(), new TypeToken<List<Holiday>>(){}.getType());
                 for (Holiday h : holidayList) {
+                    h.type = "regular";
+                    // Example: mark some as work holidays
+                    if (h.name.contains("Christmas") || h.name.contains("Thanksgiving")) {
+                        h.type = "work";
+                    }
                     LocalDate date = LocalDate.parse(h.date);
-                    holidays.put(date, h.name);
+                    holidays.computeIfAbsent(date, k -> new ArrayList<>()).add(h);
                 }
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
