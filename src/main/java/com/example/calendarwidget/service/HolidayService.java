@@ -14,42 +14,60 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class HolidayService {
+    private static final Logger logger = Logger.getLogger(HolidayService.class.getName());
     private final HttpClient httpClient;
     private final Gson gson;
 
     public HolidayService() {
         this.httpClient = HttpClient.newHttpClient();
         this.gson = new Gson();
+        logger.info("HolidayService initialized");
     }
 
     public Map<LocalDate, List<Holiday>> loadHolidays() {
+        logger.info("Starting holiday data loading");
         Map<LocalDate, List<Holiday>> holidays = new HashMap<>();
         int currentYear = LocalDate.now().getYear();
         for (int year = currentYear - 1; year <= currentYear + 1; year++) {
             try {
                 String url = "https://date.nager.at/api/v3/PublicHolidays/" + year + "/US";
+                logger.fine("Fetching holidays for year: " + year + " from URL: " + url);
                 HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
                 HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() != 200) {
+                    logger.warning("Failed to fetch holidays for year " + year + ". HTTP status: " + response.statusCode());
+                    continue;
+                }
+
                 List<Holiday> holidayList = gson.fromJson(response.body(), new TypeToken<List<Holiday>>(){}.getType());
-                System.out.println("Fetched " + holidayList.size() + " holidays for year " + year + ":");
+                logger.info("Fetched " + holidayList.size() + " holidays for year " + year);
+
                 for (Holiday h : holidayList) {
                     h.setType("regular");
-                    System.out.println("  Holiday: " + h.getName() + " on " + h.getDate());
+                    logger.fine("Processing holiday: " + h.getName() + " on " + h.getDate());
                     // Example: mark some as work holidays
                     if (h.getName().contains("Christmas") || h.getName().contains("Thanksgiving")) {
                         h.setType("work");
-                        System.out.println("    Marked as work holiday");
+                        logger.fine("Marked as work holiday: " + h.getName());
                     }
                     LocalDate date = LocalDate.parse(h.getDate());
                     holidays.computeIfAbsent(date, k -> new ArrayList<>()).add(h);
                 }
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "IO error while fetching holidays for year " + year, e);
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE, "Interrupted while fetching holidays for year " + year, e);
+                Thread.currentThread().interrupt(); // Restore interrupted status
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Unexpected error while processing holidays for year " + year, e);
             }
         }
-        System.out.println("Total holiday dates loaded: " + holidays.size());
+        logger.info("Holiday loading completed. Total holiday dates loaded: " + holidays.size());
         return holidays;
     }
 }

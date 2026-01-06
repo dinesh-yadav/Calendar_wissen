@@ -1,7 +1,7 @@
 # Calendar Widget Design Document
 
 ## Overview
-The Calendar Widget is a Java desktop application that provides a system tray calendar with holiday integration and vacation planning features. The application is built using Java 21, follows modular design principles, and is organized into packages for maintainability.
+The Calendar Widget is a Java desktop application that provides a system tray calendar with holiday integration and vacation planning features. The application is built using Java 17+ (compatible with Java 21), follows modular design principles with comprehensive logging, and is organized into packages for maintainability.
 
 ## Requirements Mapping
 
@@ -38,8 +38,19 @@ The Calendar Widget is a Java desktop application that provides a system tray ca
   - `HolidayService.java`: Optimized to fetch only necessary years for minimal resource usage.
   - `CalendarWidget.java`: Main class managing system tray integration.
 
-### 6. Modularization and Design Principles
-- **Description**: Modularize the app using SOLID, Observer, Strategy, Facade design patterns.
+### 6. Logging and Debugging
+- **Description**: Comprehensive logging system for debugging failures, monitoring application health, and troubleshooting issues.
+- **Mapped Files**:
+  - `logging.properties`: Configuration file defining log levels and output format.
+  - All Java classes: Include java.util.logging.Logger instances with appropriate log levels (INFO, FINE, SEVERE).
+  - `CalendarWidget.java`: Loads logging configuration on startup.
+  - `HolidayService.java`: Logs API calls, responses, and data processing.
+  - `AutoStartManager.java`: Logs file operations and success/failure.
+  - `CalendarController.java`: Logs user interactions and event handling.
+  - `CalendarView.java`: Logs UI updates and visual operations.
+
+### 7. Modularization and Design Principles
+- **Description**: Modularize the app using SOLID, Observer, Strategy, Facade design patterns, plus logging integration.
 - **Mapped Files**: All files follow these principles as described below.
 
 ## Design Principles
@@ -78,33 +89,47 @@ The Calendar Widget is a Java desktop application that provides a system tray ca
   - `CalendarController.java`: Acts as a facade, providing a simple interface for calendar operations while coordinating between view and service layers.
   - `CalendarWidget.java`: Main facade coordinating all subsystems (tray, view, controller).
 
+### Logging Architecture
+- **Implementation**: Comprehensive logging using java.util.logging with configurable levels.
+- **Design Principles**: Single Responsibility (logging concerns separated), Open-Closed (new log points can be added).
+- **Mapped Files**:
+  - `logging.properties`: Centralized configuration for log levels and formatting.
+  - All classes: Include Logger instances with appropriate log levels (INFO for flow, FINE for details, SEVERE for errors).
+  - Benefits: Enables debugging, monitoring, and troubleshooting without affecting core functionality.
+
 ## Module Structure
 
 ```
 src/
-├── main/java/com/example/calendarwidget/
-│   ├── CalendarWidget.java          # Main application class, system tray
-│   ├── controller/
-│   │   └── CalendarController.java  # Navigation and event handling
-│   ├── model/
-│   │   └── Holiday.java             # Holiday data model
-│   ├── service/
-│   │   └── HolidayService.java      # Holiday data fetching service
-│   ├── util/
-│   │   └── AutoStartManager.java    # Auto-start utility
-│   └── view/
-│       └── CalendarView.java        # Calendar UI and highlighting
-└── test/java/com/example/calendarwidget/
-    └── model/
-        └── HolidayTest.java         # Unit tests
+├── main/
+│   ├── java/com/example/calendarwidget/
+│   │   ├── CalendarWidget.java          # Main application class, system tray
+│   │   ├── controller/
+│   │   │   └── CalendarController.java  # Navigation and event handling
+│   │   ├── model/
+│   │   │   └── Holiday.java             # Holiday data model
+│   │   ├── service/
+│   │   │   └── HolidayService.java      # Holiday data fetching service
+│   │   ├── util/
+│   │   │   └── AutoStartManager.java    # Auto-start utility
+│   │   └── view/
+│   │       └── CalendarView.java        # Calendar UI and highlighting
+│   └── resources/
+│       └── logging.properties           # Logging configuration
+├── test/java/com/example/calendarwidget/
+│   └── model/
+│       └── HolidayTest.java             # Unit tests
+lib/
+├── gson-2.10.1.jar                      # JSON processing library
+└── jcalendar-1.4.jar                    # Calendar UI component
 ```
 
 ## Class Descriptions
 
 ### CalendarWidget
 - **Purpose**: Main application entry point.
-- **Responsibilities**: System tray management, menu creation, application lifecycle.
-- **Design Principles**: Facade for subsystem coordination.
+- **Responsibilities**: System tray management, menu creation, application lifecycle, logging configuration loading.
+- **Design Principles**: Facade for subsystem coordination, includes comprehensive startup logging.
 
 ### Holiday
 - **Purpose**: Data model for holiday information.
@@ -113,33 +138,42 @@ src/
 
 ### HolidayService
 - **Purpose**: Service for fetching and processing holiday data.
-- **Responsibilities**: API communication, data parsing, holiday categorization.
-- **Design Principles**: Single Responsibility, Strategy (easily replaceable data source).
+- **Responsibilities**: API communication, data parsing, holiday categorization, comprehensive logging of API operations.
+- **Design Principles**: Single Responsibility, Strategy (easily replaceable data source), includes detailed operation logging.
 
 ### CalendarView
 - **Purpose**: UI component for calendar display.
-- **Responsibilities**: Render 3-month view, handle visual indicators, tooltips.
-- **Design Principles**: Single Responsibility, Open-Closed (new indicators can be added).
+- **Responsibilities**: Render 3-month view, handle visual indicators, tooltips, logging of UI updates.
+- **Design Principles**: Single Responsibility, Open-Closed (new indicators can be added), includes visual operation logging.
 
 ### CalendarController
 - **Purpose**: Controller for calendar interactions.
-- **Responsibilities**: Handle navigation, event processing, coordinate view updates.
-- **Design Principles**: Single Responsibility, Observer (listens to UI events), Facade.
+- **Responsibilities**: Handle navigation, event processing, coordinate view updates, logging of user interactions.
+- **Design Principles**: Single Responsibility, Observer (listens to UI events), Facade, includes event handling logging.
 
 ### AutoStartManager
 - **Purpose**: Utility for system integration.
-- **Responsibilities**: Manage auto-start functionality.
-- **Design Principles**: Single Responsibility, follows SOLID.
+- **Responsibilities**: Manage auto-start functionality, logging of file operations and success/failure.
+- **Design Principles**: Single Responsibility, follows SOLID, includes comprehensive operation logging.
 
 ## Testing
 - Unit tests are located in `src/test/java/`
 - Uses JUnit 5 for testing
 - Currently tests the Holiday model
 - Additional tests can be added for other components
+- Comprehensive logging enables debugging of test failures and application issues
+- Application has been successfully tested with both Maven and manual compilation approaches
 
 ## Dependencies
-- JCalendar: Calendar UI component
-- Gson: JSON parsing for API responses
+- JCalendar: Calendar UI component library
+- Gson: JSON parsing library for API responses
 - JUnit: Unit testing framework
+- Java Util Logging: Built-in logging framework for debugging and monitoring
 
-This design ensures maintainability, extensibility, and adherence to software engineering best practices.
+## Build and Runtime
+- Compatible with Java 17+ (tested with Java 17 and 21)
+- Supports both Maven build system and manual compilation
+- Includes pre-downloaded JAR dependencies in `lib/` directory for manual builds
+- Logging configuration loaded automatically on startup
+
+This design ensures maintainability, extensibility, comprehensive debugging capabilities, and adherence to software engineering best practices.
