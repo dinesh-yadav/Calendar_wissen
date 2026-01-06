@@ -74,15 +74,13 @@ public class CalendarView extends JPanel {
                             int week = date.get(WeekFields.ISO.weekOfYear());
                             Integer count = weekCounts.get(week);
                             if (count != null) {
-                                button.setOpaque(true);
                                 if (count == 1) {
-                                    button.setBackground(Color.CYAN);
+                                    button.setForeground(Color.CYAN);
                                 } else {
-                                    button.setBackground(Color.BLUE);
+                                    button.setForeground(Color.BLUE);
                                 }
                             } else {
-                                button.setBackground(null);
-                                button.setOpaque(false);
+                                button.setForeground(Color.BLACK);
                             }
                             List<Holiday> dayHolidays = holidays.get(date);
                             if (dayHolidays != null && !dayHolidays.isEmpty()) {
@@ -91,8 +89,12 @@ public class CalendarView extends JPanel {
                                     tooltip.append(h.getType().equals("work") ? "Work Holiday: " : "Holiday: ").append(h.getName()).append("\n");
                                 }
                                 button.setToolTipText(tooltip.toString().trim());
+                                Font font = button.getFont();
+                                button.setFont(font.deriveFont(Font.BOLD));
                             } else {
                                 button.setToolTipText(null);
+                                Font font = button.getFont();
+                                button.setFont(font.deriveFont(Font.PLAIN));
                             }
                         }
                     } catch (NumberFormatException e) {
